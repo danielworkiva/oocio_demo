@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workiva API Gateway Demo</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- CSS COMPLETO E RESPONSIVO --- */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0d0d12;
+      color: #e0e0e0;
+      padding: 0; /* Começa sem padding para mobile */
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      box-sizing: border-box;
+      background-image:
+        linear-gradient(to right, rgba(0,200,200,0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,200,200,0.02) 1px, transparent 1px);
+      background-size: 30px 30px;
+      background-attachment: fixed;
+    }
+
+    .hidden { display: none !important; }
+
+    /* --- Main Layout --- */
+    .demo-container {
+      display: flex;
+      flex-direction: column; /* Padrão é mobile-first (empilhado) */
+      width: 100%;
+      max-width: 1250px; /* Limite máximo para desktop */
+      background-color: rgba(12, 12, 16, 0.98);
+      border: 1px solid rgba(0,220,220,0.3);
+      border-radius: 0; /* Sem borda no mobile */
+      box-shadow: 0 0 30px rgba(0,255,255,0.2), inset 0 0 15px rgba(0,255,255,0.05);
+      overflow: hidden;
+      min-height: 100vh; /* Ocupa a tela inteira no mobile */
+      position: relative;
+      z-index: 1;
+      background-image:
+        linear-gradient(to right, rgba(0,220,220,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,220,220,0.03) 1px, transparent 1px);
+      background-size: 25px 25px;
+    }
+    .demo-container::before {
+      content: '';
+      position: absolute;
+      top: -5px; bottom: -5px; left: -5px; right: -5px;
+      background: linear-gradient(45deg, rgba(0,255,255,0.5), rgba(0,100,200,0.5));
+      z-index: -1;
+      filter: blur(20px);
+      opacity: 0.3;
+      border-radius: 10px;
+    }
+
+    /* --- Painéis --- */
+    .flow-panel, .status-panel {
+      width: 100%;
+      padding: 20px;
+      overflow-y: visible;
+      position: relative;
+      box-sizing: border-box; /* Garante que o padding não quebre o layout */
+    }
+    
+    .flow-panel {
+      border-bottom: 1px solid rgba(0,220,220,0.2);
+      background-color: #0b0b10;
+      background-image:
+        linear-gradient(45deg, rgba(0,255,255,0.05) 1px, transparent 1px),
+        radial-gradient(circle, rgba(0,255,255,0.08) 1px, transparent 1px);
+      background-size: 30px 30px, 5px 5px;
+    }
+    
+    .status-panel {
+      backdrop-filter: blur(5px);
+      background-color: rgba(0,0,0,0.3);
+    }
+
+    h2, h3 {
+      font-family: 'Roboto Mono', monospace;
+      color: #00e0e0;
+      border-bottom: 1px solid rgba(0,220,220,0.2);
+      padding-bottom: 8px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 0 0 15px 0;
+      font-size: 1.2em; /* Tamanho bom para mobile */
+    }
+    .flow-panel h2 { margin-bottom: 20px; }
+    h3 { margin-top: 25px; }
+
+    /* --- Flow Box Styles --- */
+    .flow-box {
+      background-color: rgba(0,220,220,0.05);
+      border: 1px solid rgba(0,220,220,0.2);
+      border-radius: 4px;
+      padding: 12px;
+      margin: 14px 0;
+      font-weight: 700;
+      font-size: 1em;
+      position: relative;
+      color: #e0e0e0;
+      box-shadow: inset 0 0 5px rgba(0,220,220,0.1);
+      backdrop-filter: blur(5px);
+    }
+    .flow-box small {
+      display: block;
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 400;
+      color: #00c0c0;
+      opacity: 0.8;
+      font-size: 0.75em;
+      margin-top: 4px;
+    }
+    #flow-erp { border-left: 3px solid #0088cc; }
+    #flow-hris { border-left: 3px solid #00cc88; }
+    #flow-dwh { border-left: 3px solid #cc8800; }
+    #flow-workiva { border-left: 3px solid #8844cc; }
+
+    .flow-box-final {
+      background-color: rgba(0,220,220,0.02);
+      border: 1px dashed rgba(0,220,220,0.3);
+      color: #888;
+      text-align: center;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 15px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.9em;
+    }
+    .arrow {
+      text-align: center;
+      font-size: 1.5em;
+      color: rgba(0,255,255,0.6);
+      text-shadow: 0 0 8px rgba(0,255,255,0.5);
+      animation: pulse-arrow 2s infinite alternate;
+      margin: 2px 0;
+    }
+    @keyframes pulse-arrow {
+      from { opacity: 0.7; }
+      to { opacity: 1; }
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px; height: 12px; border-radius: 50%; background-color: #333; margin-right: 10px; vertical-align: middle;
+    }
+    .flow-box.running .status-indicator { background-color: #00e0e0; animation: pulse-cyan 1s infinite; }
+    .flow-box.success .status-indicator { background-color: #00dd00; box-shadow: 0 0 8px rgba(0,221,0,0.5); }
+    .flow-box.fail .status-indicator { background-color: #dd0000; }
+    @keyframes pulse-cyan {
+      0% { box-shadow: 0 0 0 0 rgba(0,220,220, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(0,220,220, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,220,220, 0); }
+    }
+
+    /* --- Buttons --- */
+    #run-button, #run-step-4-button, #run-step-5-button {
+      width: 100%; padding: 15px; font-size: 1.2em; font-weight: 700; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-top: 30px; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 2px; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #005588, #0088cc);
+      box-shadow: 0 4px 15px rgba(0,136,204,0.4);
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    #run-button:hover, #run-step-4-button:hover, #run-step-5-button:hover {
+      background: linear-gradient(135deg, #006699, #0099dd);
+      box-shadow: 0 6px 20px rgba(0,136,204,0.6);
+      transform: translateY(-2px);
+    }
+    #run-button:disabled, #run-step-4-button:disabled, #run-step-5-button:disabled {
+      background: #2a2a35; color: #888; cursor: not-allowed; box-shadow: none; border: none; transform: none;
+    }
+
+    /* --- Status Panel (Right) --- */
+    #status-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      font-family: 'Roboto Mono', monospace;
+      background-color: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,220,220,0.15);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    #status-table th, #status-table td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(0,220,220,0.1); color: #e0e0e0; }
+    #status-table th { background-color: rgba(0,220,220,0.1); color: #00e0e0; }
+    #status-table td.status-success { color: #00ff00 !important; font-weight: 700; text-shadow: 0 0 5px rgba(0,255,0,0.3); }
+    #status-table td.status-running { color: #00ffff !important; font-weight: 700; }
+
+    #data-stream {
+      background-color: #08080c;
+      border: 1px solid rgba(0,220,220,0.2);
+      padding: 15px;
+      border-radius: 4px;
+      max-height: 200px; overflow-y: auto;
+      font-family: 'Roboto Mono', monospace; font-size: 0.9em; color: #d0d0d0;
+      white-space: pre-wrap; overflow-x: auto;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    /* --- Step 3 Message --- */
+    #step3-message-container {
+      text-align: center; margin-top: 30px;
+      border: 1px solid rgba(0,220,220,0.5);
+      padding: 20px;
+      border-radius: 6px;
+      background-color: rgba(0,20,30,0.8);
+      box-shadow: 0 0 30px rgba(0,220,220,0.2), inset 0 0 20px rgba(0,220,220,0.1);
+      position: relative; overflow: hidden;
+      background-image: linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    #step3-message-container::after {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(0,255,255,0.1) 0%, transparent 60%);
+      animation: rotate-glow 10s linear infinite; pointer-events: none;
+    }
+    @keyframes rotate-glow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    #step3-message { font-size: 1.6em; font-weight: 700; border-bottom: none; margin: 0; padding: 0; line-height: 1.2; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.4); width: 90%; margin: 0 auto; display: block; }
+    #step3-submessage { font-size: 1.0em; color: #00ffff; opacity: 0.8; margin: 10px auto 0 auto; font-family: 'Inter', sans-serif; font-weight: 500; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 90%; display: block; }
+
+    /* --- Dashboard --- */
+    #step4-dashboard {
+      background-color: rgba(10,10,15,0.6); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; height: 100%;
+      border: 1px solid rgba(0,220,220,0.25); box-shadow: 0 5px 20px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+      background-image: linear-gradient(45deg, rgba(0,200,200,0.03) 1px, transparent 1px), linear-gradient(135deg, rgba(0,200,200,0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .dashboard-header { display: flex; flex-direction: column; align-items: flex-start; padding: 0 0 20px 0; border-bottom: 2px solid rgba(0,220,220,0.3); margin-bottom: 20px; }
+    .dashboard-title { font-size: 1.8em; font-weight: 700; color: #00e0e0; text-transform: uppercase; letter-spacing: 2px; }
+    .dashboard-subtitle { font-size: 1.2em; color: #c0c0c0; font-weight: 500; }
+    .dashboard-grid { display: grid; grid-template-columns: 1fr; grid-template-rows: auto; gap: 20px; flex-grow: 1; overflow-y: auto; padding-right: 0; }
+    .dashboard-card { background-color: rgba(20,20,30,0.5); border-radius: 6px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; border: 1px solid rgba(0,220,220,0.1); }
+    .dashboard-card.narrative { grid-column: 1 / -1; }
+    .card-header { font-size: 1.3em; font-weight: 600; color: #00e0e0; border-bottom: 1px solid rgba(0,220,220,0.15); padding-bottom: 12px; margin-bottom: 15px; letter-spacing: 0.5px; }
+    .chart-container { width: 100%; height: 250px; }
+    .insights-list { list-style: none; padding: 0; margin: 0; }
+    .insights-list li { padding: 12px 15px 12px 25px; border-bottom: 1px solid rgba(0,220,220,0.1); position: relative; }
+    .insights-list li::before { content: ''; position: absolute; left: 0; top: 16px; width: 8px; height: 8px; background-color: #00e0e0; transform: rotate(45deg); box-shadow: 0 0 5px rgba(0,220,220,0.6); }
+    .insights-list li:last-child { border-bottom: none; }
+    .insight-title { font-weight: 700; color: #f0f0f0; font-size: 1.05em; margin-bottom: 5px; }
+    .insight-text { font-size: 0.95em; color: #cccccc; line-height: 1.5; }
+    .insights-list li.positive::before { background-color: #00cc66; } .insights-list li.negative::before { background-color: #ff5555; } .insights-list li.warning::before { background-color: #ffbb33; }
+
+    /* --- AI Sentinel --- */
+    #step5-ai-sentinel { background-color: rgba(10,10,15,0.6); border-radius: 6px; padding: 25px; display: flex; flex-direction: column; height: 100%; border: 1px solid rgba(0,220,220,0.25); box-shadow: 0 0 20px rgba(0,220,220,0.15); backdrop-filter: blur(5px); }
+    .ai-header { display: flex; align-items: center; font-size: 1.8em; font-weight: 700; color: #00e0e0; text-transform: uppercase; padding: 0 0 20px 0; border-bottom: 2px solid rgba(0,220,220,0.3); margin-bottom: 20px; letter-spacing: 2px; }
+    .ai-icon { font-size: 1.4em; margin-right: 20px; color: #00e0e0; filter: drop-shadow(0 0 8px rgba(0,255,255,0.6)); }
+    .ai-body { flex-grow: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+    .ai-loader { text-align: center; color: #00e0e0; font-family: 'Roboto Mono', monospace; font-size: 1.2em; }
+    .ai-loader .spinner { width: 80px; height: 80px; border: 8px solid rgba(0,220,220,0.1); border-top-color: #00e0e0; border-radius: 50%; animation: spin-ai 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; margin: 0 auto 30px auto; box-shadow: 0 0 20px rgba(0,220,220,0.3); }
+    @keyframes spin-ai { to { transform: rotate(360deg); } }
+    #ai-response-stream { background-color: #08080c; border: 1px solid rgba(0,220,220,0.3); padding: 20px; border-radius: 6px; max-height: 450px; overflow-y: auto; font-family: 'Roboto Mono', monospace; font-size: 0.95em; color: #d0d0d0; white-space: pre-wrap; width: 100%; box-shadow: inset 0 0 15px rgba(0,0,0,0.6); line-height: 1.5; }
+
+    /* --- Charts --- */
+    .apexcharts-text { fill: #c0c0c0 !important; font-family: 'Inter', sans-serif !important; }
+    .apexcharts-tooltip { background-color: #1a1a25 !important; border: 1px solid #00e0e0 !important; box-shadow: 0 0 10px rgba(0,220,220,0.3) !important; color: #e0e0e0 !important; }
+    .apexcharts-tooltip-title { background-color: #0a0a10 !important; border-bottom: 1px solid rgba(0,220,220,0.2) !important; font-family: 'Roboto Mono', monospace !important; }
+    .apexcharts-xaxistooltip { background-color: #1a1a25 !important; border: 1px solid #00e0e0 !important; color: #00e0e0 !important; }
+    
+    
+    /* --- MEDIA QUERY PARA RESPONSIVIDADE (iPhone) --- */
+    /* Este bloco só é ativado se a tela tiver 800px de largura ou menos */
+    @media (max-width: 800px) {
+      body {
+        padding: 0;
+        align-items: flex-start;
+      }
+      
+      .demo-container {
+        flex-direction: column; /* Empilha os painéis */
+        width: 100%;
+        height: auto; /* Remove altura fixa */
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      
+      .flow-panel, .status-panel {
+        width: 100%;
+        height: auto;
+        overflow-y: visible;
+        border-right: none;
+        border-bottom: 2px solid rgba(0,220,220,0.2);
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      
+      .flow-panel h2, h3, .dashboard-title, .ai-header {
+        font-size: 1.3em;
+      }
+      
+      .flow-box {
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 0.9em;
+      }
+      
+      .arrow { font-size: 1.2em; margin: 0; }
+      
+      #run-button, #run-step-4-button, #run-step-5-button {
+        padding: 14px;
+        font-size: 1.1em;
+        margin-top: 25px;
+      }
+      
+      #status-table th, #status-table td {
+        padding: 10px 8px;
+        font-size: 0.85em;
+      }
+      
+      #data-stream, #ai-response-stream {
+        max-height: 300px;
+        font-size: 0.85em;
+      }
+      
+      #step3-message-container { padding: 20px 15px; }
+      #step3-message { font-size: 1.4em; }
+      #step3-submessage { font-size: 1.0em; white-space: normal; } /* Permite quebra de linha */
+      
+      .dashboard-header { flex-direction: column; align-items: flex-start; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .dashboard-card { padding: 15px; }
+      .card-header { font-size: 1.2em; }
+      
+      .ai-loader .spinner { width: 60px; height: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="demo-container">
+  
+    <div class="flow-panel">
+      <h2>API Gateway - Orchestration Flow</h2>
+      
+      <div class="flow-box" id="flow-erp">
+        <span class="status-indicator"></span>
+        ERP SYSTEM CALL
+        <small>api.erp.com/getFinancials</small>
+      </div>
+      
+      <div class="arrow">&darr;</div>
+      
+      <div class="flow-box" id="flow-hris">
+        <span class="status-indicator"></span>
+        HRIS SYSTEM CALL
+        <small>api.hris.com/getEmployees</small>
+      </div>
+      
+      <div class="arrow">&darr;</div>
+      
+      <div class="flow-box" id="flow-dwh">
+        <span class="status-indicator"></span>
+        DATA WAREHOUSE QUERY
+        <small>SELECT * FROM enterprise_dwh</small>
+      </div>
+      
+      <div class="arrow">&darr;</div>
+      
+      <div class="flow-box" id="flow-workiva">
+        <span class="status-indicator"></span>
+        WORKIVA SUBMIT
+        <small>workiva.com/submitReportData</small>
+      </div>
+        
+        <div class="arrow">&darr;</div>
+        <div class="flow-box-final">Aggregated_Response</div>
+        
+        <button id="run-button">RUN</button>
+      </div>
+      
+      <div class="status-panel">
+        
+        <div id="step1-2-content">
+          <h3>System Call Status</h3>
+          <table id="status-table">
+            <thead>
+              <tr>
+                <th>System Call</th>
+                <th>Status</th>
+                <th>Time (ms)</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              </tbody>
+          </table>
+          
+          <h3>Aggregated Data Stream (JSON)</h3>
+          <pre id="data-stream">
+            </pre>
+        </div>
+        
+        <div id="step3-message-container" class="hidden">
+          <h3 id="step3-message">
+             Board Report is Ready in Workiva
+          </h3>
+          <p id="step3-submessage">
+            Data has been curated and audited and is now ready to be published
+          </p>
+        </div>
+        
+        <button id="run-step-4-button" class="hidden">
+          FETCH & DISPLAY DASHBOARD
+        </button>
+        
+        <div id="step4-dashboard" class="hidden">
+          <div class="dashboard-header">
+            <div class="dashboard-title">Curated Board Report</div>
+            <div class="dashboard-subtitle">Q4 Executive Overview</div>
+          </div>
+    
+          <div class="dashboard-grid">
+            <div class="dashboard-card">
+              <div class="card-header">Q4 Financial Performance</div>
+              <div class="chart-container" id="finance-bar-chart"></div>
+            </div>
+            <div class="dashboard-card">
+              <div class="card-header">Headcount by Dept</div>
+              <div class="chart-container" id="hr-donut-chart"></div>
+            </div>
+            <div class="dashboard-card narrative">
+              <div class="card-header">Key Narrative Insights</div>
+              <ul class="insights-list" id="insights-container"></ul>
+            </div>
+          </div>
+        </div>
+        
+        <button id="run-step-5-button" class="hidden">
+          Invoke Strategic Sentinel AI
+        </button>
+        
+        <div id="step5-ai-sentinel" class="hidden">
+          <div class="ai-header">
+            <span class="ai-icon">&#x2316;</span> Strategic Sentinel AI
+          </div>
+          <div class="ai-body">
+            <div class="ai-loader">
+              <div class="spinner"></div>
+              <p>Analyzing curated public data from Workiva...</p>
+            </div>
+            <pre id="ai-response-stream" class="hidden"></pre>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+  <script>
+    // --- JAVASCRIPT COMPLETO (MOCKADO E FUNCIONAL) ---
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      /* --- 1. GET ALL THE HTML ELEMENTS --- */
+      const runButton = document.getElementById('run-button');
+      const statusTableBody = document.querySelector('#status-table tbody');
+      const dataStream = document.getElementById('data-stream');
+      const step3MessageContainer = document.getElementById('step3-message-container');
+    
+      // --- ELEMENTS FOR STEP 4 ---
+      const runStep4Button = document.getElementById('run-step-4-button');
+      const step1to2Content = document.getElementById('step1-2-content');
+      const step4Dashboard = document.getElementById('step4-dashboard');
+      const insightsContainer = document.getElementById('insights-container');
+    
+      // --- NEW ELEMENTS FOR STEP 5 ---
+      const runStep5Button = document.getElementById('run-step-5-button');
+      const step5AISentinel = document.getElementById('step5-ai-sentinel');
+      const aiLoader = step5AISentinel.querySelector('.ai-loader');
+      const aiResponseStream = document.getElementById('ai-response-stream');
+    
+      // --- CHART GLOBALS ---
+      let financeChart = null;
+      let hrChart = null;
+      let autoResetTimer = null; 
+    
+      const flowBoxes = {
+        erp: document.getElementById('flow-erp'),
+        hris: document.getElementById('flow-hris'),
+        dwh: document.getElementById('flow-dwh'),
+        workiva: document.getElementById('flow-workiva')
+      };
+    
+      /* --- 2. DEFINE MOCK DATA --- */
+    
+      const mockErpData = { "revenue_actual": 120.5, "ebitda": 30.2, "op_ex": 60.1 };
+      const mockHrisData = {
+        "new_hires": 42, "terminations": 18, "headcount": 5890,
+        "department_metrics": [
+          { "dept": "Engineering", "hc": 2100 }, { "dept": "Sales", "hc": 1500 },
+          { "dept": "Marketing", "hc": 800 }, { "dept": "Finance", "hc": 600 },
+          { "dept": "HR", "hc": 400 }, { "dept": "Other", "hc": 490 }
+        ]
+      };
+      const mockDwhData = { "q4_revenue_forecast": 135, "q4_op_ex_forecast": 62 };
+      const aggregatedJSON = {
+        "erp_data": mockErpData, "hris_data": mockHrisData, "dwh_data": mockDwhData
+      };
+    
+      const mockCuratedBoardReportData = {
+        key_insights: [
+          { 
+            title: "Revenue Miss Analysis", 
+            text: "Q4 Revenue missed forecast by 10.7% ($14.5M), primarily due to macroeconomic downturn impacting sales in the APAC region.",
+            sentiment: "negative" 
+          },
+          { 
+            title: "Operational Efficiency", 
+            text: "OpEx was successfully controlled, finishing 3.1% below the forecasted $62M due to strong T&E and vendor management. Margins preserved despite revenue miss.",
+            sentiment: "positive"
+          },
+          { 
+            title: "HR Attrition Risk", 
+            text: "Employee terminations (18) were 80% above target. Engineering is a key risk area. Mitigation plans are in place and recruiting has been accelerated.",
+            sentiment: "warning"
+          },
+          {
+            title: "R&D Investment Outlook",
+            text: "R&D spend remains on track with strategic roadmap. New product launch schedule for Q1 remains unaffected by current OpEx tightening.",
+            sentiment: "positive"
+          },
+          {
+            title: "Cash Flow Position",
+            text: "Operating cash flow remains strong at $45M for the quarter, providing sufficient buffer for planned Q1 capital expenditures.",
+            sentiment: "positive"
+          }
+        ]
+      };
+    
+      const mockAiResponse = {
+        "analysis_id": "SS-45b1",
+        "subject": "Q4 Public Report Analysis: [Company Name]",
+        "sentiment": "Optimistic",
+        "key_findings": [
+          {
+            "area": "Revenue",
+            "finding": "Top-line revenue missed consensus forecast ($120.5M vs $135.0M), attributed to macroeconomic factors.",
+            "impact": "Negative"
+          },
+          {
+            "area": "Profitability",
+            "finding": "Excellent operational control. OpEx beat the forecast ($60.1M vs $62.0M), preserving margins. EBITDA beat its target.",
+            "impact": "Positive"
+          },
+          {
+            "area": "Risk (Human Capital)",
+            "finding": "A spike in terminations (18 vs. 10 target) was noted. The report clearly identifies this as a risk with mitigation plans, demonstrating high management transparency.",
+            "impact": "Warning (Mitigated by Transparency)"
+          }
+        ],
+        "recommendation": "BUY (Upgrade from HOLD). The revenue miss is a known factor. Our confidence comes from the exceptional transparency and quality of the curated data. Management clearly identifies risks (attrition) and strengths (OpEx control) with no blind spots. This level of data integrity signals strong governance and reduces our risk premium. We are initiating a BUY position."
+      };
+    
+      /* --- 3. HELPER FUNCTIONS --- */
+    
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    
+      function getTimestamp() {
+        const now = new Date();
+        return now.toISOString().split('T')[0] + ' ' + now.toTimeString().split(' ')[0];
+      }
+    
+      function updateFlowStatus(box, status) {
+        box.classList.remove('running', 'success', 'fail');
+        if (status) {
+          box.classList.add(status);
+        }
+      }
+    
+      function addStatusRow(systemCall, status, time) {
+        const row = document.createElement('tr');
+        const statusClass = status === 'Success' ? 'status-success' : (status === 'Running' ? 'status-running' : '');
+        
+        row.innerHTML = `
+          <td>${systemCall}</td>
+          <td class="${statusClass}">${status}</td>
+          <td>${time ? time + ' ms' : '...'}</td>
+          <td>${time ? getTimestamp() : '...'}</td>
+        `;
+        statusTableBody.appendChild(row);
+        return row;
+      }
+    
+      function updateStatusRow(row, status, time) {
+        const cells = row.getElementsByTagName('td');
+        cells[1].innerText = status;
+        cells[1].className = 'status-success'; // Garante o verde
+        cells[2].innerText = time + ' ms';
+        cells[3].innerText = getTimestamp();
+      }
+    
+      function resetDemo() {
+        if (autoResetTimer) clearTimeout(autoResetTimer);
+    
+        statusTableBody.innerHTML = '';
+        dataStream.innerText = '';
+        insightsContainer.innerHTML = '';
+        Object.values(flowBoxes).forEach(box => updateFlowStatus(box, null));
+        
+        step1to2Content.classList.remove('hidden'); 
+        step3MessageContainer.classList.add('hidden');
+        runStep4Button.classList.add('hidden');
+        step4Dashboard.classList.add('hidden');
+        runStep5Button.classList.add('hidden'); 
+        step5AISentinel.classList.add('hidden'); 
+        
+        if (financeChart) {
+          financeChart.destroy();
+          financeChart = null;
+        }
+        if (hrChart) {
+          hrChart.destroy();
+          hrChart = null;
+        }
+        
+        runButton.disabled = false;
+        runButton.innerText = 'RUN'; 
+        runStep4Button.disabled = false;
+        runStep4Button.innerText = 'FETCH & DISPLAY DASHBOARD';
+        runStep5Button.disabled = false; 
+        runStep5Button.innerText = 'Invoke Strategic Sentinel AI'; 
+      }
+    
+      /* --- CHART FUNCTIONS --- */
+      function renderFinanceChart() {
+        if (typeof ApexCharts === 'undefined') return;
+        
+        const options = {
+          series: [{
+            name: 'Actual',
+            data: [mockErpData.revenue_actual, mockErpData.ebitda, mockErpData.op_ex]
+          }, {
+            name: 'Target (Forecast)',
+            data: [mockDwhData.q4_revenue_forecast, 30.0, mockDwhData.q4_op_ex_forecast] 
+          }],
+          chart: { 
+            type: 'bar', 
+            height: 250, 
+            toolbar: { show: false }, 
+            foreColor: '#a0a0a0',
+            fontFamily: 'Inter, sans-serif',
+            background: 'transparent'
+          },
+          plotOptions: { bar: { horizontal: false, columnWidth: '50%', endingShape: 'rounded', borderRadius: 2 } },
+          dataLabels: { enabled: false },
+          grid: {
+            borderColor: 'rgba(0,220,220,0.1)',
+            strokeDashArray: 4,
+            xaxis: { lines: { show: false } },   
+            yaxis: { lines: { show: true } }
+          },
+          stroke: { show: true, width: 4, colors: ['transparent'] },
+          xaxis: { 
+            categories: ['Revenue', 'EBITDA', 'OpEx'],
+            axisBorder: { show: true, color: 'rgba(0,220,220,0.2)' },
+            axisTicks: { show: false },
+            labels: {
+                style: { colors: '#00e0e0', fontSize: '12px', fontWeight: 500 }
+            }
+          },
+          yaxis: { 
+            title: { text: '$ Millions', style: { color: '#a0a0a0', fontWeight: 400 } },
+            labels: { style: { colors: '#00e0e0', fontSize: '12px' } }
+          },
+          fill: { opacity: 1 },
+          tooltip: { 
+            theme: 'dark', 
+            y: { formatter: val => `$${val}M` },
+            style: { fontSize: '12px' }
+          },
+          colors: ['#00a0e0', '#005580'],
+          legend: { 
+            position: 'top',
+            horizontalAlign: 'right',
+            offsetY: -20,
+            labels: { colors: '#c0c0c0' },
+            markers: { width: 10, height: 10, radius: 10 }
+          }
+        };
+        financeChart = new ApexCharts(document.querySelector("#finance-bar-chart"), options);
+        financeChart.render();
+      }
+    
+      function renderHRChart() {
+        if (typeof ApexCharts === 'undefined') return;
+          
+        const chartData = mockHrisData.department_metrics;
+        const options = {
+          series: chartData.map(d => d.hc),
+          labels: chartData.map(d => d.dept),
+          chart: { 
+            type: 'donut', 
+            height: 250, 
+            foreColor: '#a0a0a0',
+            fontFamily: 'Inter, sans-serif',
+            background: 'transparent'
+          },
+          plotOptions: { 
+            pie: { 
+              donut: { 
+                size: '70%',
+                labels: { 
+                  show: true, 
+                  name: { show: true, fontSize: '14px', color: '#a0a0a0', offsetY: -5 },
+                  value: { show: true, fontSize: '24px', color: '#00e0e0', fontWeight: 700, offsetY: 5, formatter: val => parseInt(val).toLocaleString() },
+                  total: { 
+                    show: true, 
+                    label: 'Total', 
+                    color: '#e0e0e0', 
+                    formatter: () => mockHrisData.headcount.toLocaleString()
+                  }
+                } 
+              } 
+            } 
+          },
+          dataLabels: { enabled: false },
+          stroke: { width: 2, colors: ['#1a1a25'] },
+          tooltip: { 
+            theme: 'dark', 
+            y: { formatter: val => val.toLocaleString() },
+            style: { fontSize: '12px' }
+          },
+          legend: { show: false },
+          colors: ['#00e0e0', '#00b0d0', '#0080c0', '#0050b0', '#506080', '#304050']
+        };
+        hrChart = new ApexCharts(document.querySelector("#hr-donut-chart"), options);
+        hrChart.render();
+      }
+    
+      function populateNarrative() {
+        insightsContainer.innerHTML = ''; 
+        mockCuratedBoardReportData.key_insights.forEach(insight => {
+          const insightElement = document.createElement('li');
+          insightElement.className = insight.sentiment; 
+          insightElement.innerHTML = `
+            <div class="insight-title">${insight.title}</div>
+            <div class="insight-text">${insight.text}</div>
+          `;
+          insightsContainer.appendChild(insightElement);
+        });
+      }
+    
+      /* --- 4. THE MAIN DEMO FUNCTIONS (SEQUENTIAL) --- */
+    
+      // --- Steps 1, 2, 3 (MOCKED) ---
+      async function runDemo() {
+        resetDemo(); 
+        runButton.disabled = true;
+        runButton.innerText = 'RUNNING...';
+        
+        updateFlowStatus(flowBoxes.erp, 'running');
+        const erpRow = addStatusRow('ERP SYSTEM CALL', 'Running');
+        await sleep(800);
+        updateFlowStatus(flowBoxes.erp, 'success');
+        updateStatusRow(erpRow, 'Success', 180);
+        
+        updateFlowStatus(flowBoxes.hris, 'running');
+        const hrisRow = addStatusRow('HRIS SYSTEM CALL', 'Running');
+        await sleep(600);
+        updateFlowStatus(flowBoxes.hris, 'success');
+        updateStatusRow(hrisRow, 'Success', 95);
+        
+        updateFlowStatus(flowBoxes.dwh, 'running');
+        const dwhRow = addStatusRow('DATA WAREHOUSE QUERY', 'Running');
+        await sleep(1000);
+        updateFlowStatus(flowBoxes.dwh, 'success');
+        updateStatusRow(dwhRow, 'Success', 220);
+        
+        updateFlowStatus(flowBoxes.workiva, 'running');
+        const workivaRow = addStatusRow('WORKIVA SUBMIT', 'Running');
+        await sleep(900);
+        updateFlowStatus(flowBoxes.workiva, 'success');
+        updateStatusRow(workivaRow, 'Success', 210);
+        
+        dataStream.innerText = JSON.stringify(aggregatedJSON, null, 2);
+    
+        await sleep(5000); 
+        step3MessageContainer.classList.remove('hidden');
+        runStep4Button.classList.remove('hidden');
+        
+        runButton.disabled = false;
+        runButton.innerText = 'RUN'; 
+      }
+    
+      // --- Step 4: Fetch and Display Dashboard (MOCKED) ---
+      async function runStep4() {
+        runStep4Button.disabled = true;
+        runStep4Button.innerText = 'FETCHING...';
+        await sleep(1000); 
+        
+        step1to2Content.classList.add('hidden');
+        step3MessageContainer.classList.add('hidden');
+        runStep4Button.classList.add('hidden'); 
+        
+        step4Dashboard.classList.remove('hidden');
+        
+        renderFinanceChart();
+        renderHRChart();
+        populateNarrative();
+        
+        runStep5Button.classList.remove('hidden');
+        
+        runStep4Button.disabled = false;
+        runStep4Button.innerText = 'FETCH & DISPLAY DASHBOARD';
+      }
+    
+      // --- STEP 5 FUNCTION (MOCKED) ---
+      async function runStep5() {
+        runStep5Button.disabled = true;
+        runStep5Button.innerText = 'ANALYZING...';
+        
+        step4Dashboard.classList.add('hidden');
+        runStep5Button.classList.add('hidden');
+        
+        step5AISentinel.classList.remove('hidden');
+        aiLoader.classList.remove('hidden'); 
+        aiResponseStream.classList.add('hidden'); 
+        
+        await sleep(4000); 
+        
+        aiLoader.classList.add('hidden');
+        
+        aiResponseStream.innerText = JSON.stringify(mockAiResponse, null, 2);
+        aiResponseStream.classList.remove('hidden');
+        
+        runStep5Button.disabled = false; 
+        runStep5Button.innerText = 'Invoke Strategic Sentinel AI';
+    
+        autoResetTimer = setTimeout(resetDemo, 20000);
+      }
+    
+      /* --- 5. ATTACH THE EVENT LISTENERS --- */
+      runButton.addEventListener('click', runDemo);
+      runStep4Button.addEventListener('click', runStep4);
+      runStep5Button.addEventListener('click', runStep5);
+    
+      resetDemo();
+    
+    }); 
+  </script>
+</body>
+</html>
