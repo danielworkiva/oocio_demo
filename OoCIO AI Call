@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Workiva API Gateway Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* --- COMPLETE CSS --- */
+    /* --- CSS STYLES --- */
     body {
       font-family: 'Inter', sans-serif;
       background-color: #0d0d12;
@@ -21,13 +20,13 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0; /* Reset browser default margin */
       box-sizing: border-box;
       background-image:
         linear-gradient(to right, rgba(0,200,200,0.02) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(0,200,200,0.02) 1px, transparent 1px);
       background-size: 30px 30px;
       background-attachment: fixed;
+      margin: 0;
     }
 
     /* --- HELPER CLASS --- */
@@ -98,7 +97,8 @@
       text-transform: uppercase;
       font-weight: 700;
       letter-spacing: 1px;
-      margin: 0 0 15px 0; /* Reset margin top default */
+      margin-bottom: 15px;
+      margin-top: 0;
     }
     .flow-panel h2 { font-size: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 20px; }
     h3 { font-size: 1.2em; margin-top: 25px; }
@@ -187,7 +187,7 @@
 
     /* --- Status Panel (Right) --- */
     #status-table {
-      width: 100%; border-collapse: separate; border-spacing: 0; /* Modified to allow border-radius in the table */
+      width: 100%; border-collapse: separate; border-spacing: 0;
       font-family: 'Roboto Mono', monospace;
       background-color: rgba(0,0,0,0.3);
       border: 1px solid rgba(0,220,220,0.15);
@@ -196,7 +196,6 @@
     }
     #status-table th, #status-table td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(0,220,220,0.1); color: #e0e0e0; }
     #status-table th { background-color: rgba(0,220,220,0.1); color: #00e0e0; }
-    /* CORES DE STATUS */
     #status-table td.status-success { color: #00ff00 !important; font-weight: 700; text-shadow: 0 0 5px rgba(0,255,0,0.3); }
     #status-table td.status-running { color: #00ffff !important; font-weight: 700; }
 
@@ -266,7 +265,6 @@
     @keyframes spin-ai { to { transform: rotate(360deg); } }
     #ai-response-stream { background-color: #08080c; border: 1px solid rgba(0,220,220,0.3); padding: 20px; border-radius: 6px; max-height: 450px; overflow-y: auto; font-family: 'Roboto Mono', monospace; font-size: 0.95em; color: #d0d0d0; white-space: pre-wrap; width: 100%; box-shadow: inset 0 0 15px rgba(0,0,0,0.6); line-height: 1.5; }
 
-    /* --- Charts --- */
     .apexcharts-text { fill: #c0c0c0 !important; font-family: 'Inter', sans-serif !important; }
     .apexcharts-tooltip { background-color: #1a1a25 !important; border: 1px solid #00e0e0 !important; box-shadow: 0 0 10px rgba(0,220,220,0.3) !important; color: #e0e0e0 !important; }
     .apexcharts-tooltip-title { background-color: #0a0a10 !important; border-bottom: 1px solid rgba(0,220,220,0.2) !important; font-family: 'Roboto Mono', monospace !important; }
@@ -368,7 +366,8 @@
           </div>
           <div class="dashboard-card narrative">
             <div class="card-header">Key Narrative Insights</div>
-            <ul class="insights-list" id="insights-container"></ul>
+            <ul class="insights-list" id="insights-container">
+              </ul>
           </div>
         </div>
       </div>
@@ -394,44 +393,30 @@
   </div>
 
   <script>
-    // THE CORRECTION: Wait for the HTML to load before running the JS
     document.addEventListener('DOMContentLoaded', () => {
       
-      /* --- 1. GET ALL THE HTML ELEMENTS --- */
       const runButton = document.getElementById('run-button');
       const statusTableBody = document.querySelector('#status-table tbody');
       const dataStream = document.getElementById('data-stream');
       const step3MessageContainer = document.getElementById('step3-message-container');
-    
-      // --- ELEMENTS FOR STEP 4 ---
       const runStep4Button = document.getElementById('run-step-4-button');
       const step1to2Content = document.getElementById('step1-2-content');
       const step4Dashboard = document.getElementById('step4-dashboard');
       const insightsContainer = document.getElementById('insights-container');
-    
-      // --- NEW ELEMENTS FOR STEP 5 ---
       const runStep5Button = document.getElementById('run-step-5-button');
       const step5AISentinel = document.getElementById('step5-ai-sentinel');
       const aiLoader = step5AISentinel.querySelector('.ai-loader');
       const aiResponseStream = document.getElementById('ai-response-stream');
-      // ------------------------------
-    
-      // --- CHART GLOBALS ---
-      let financeChart = null;
-      let hrChart = null;
-      let autoResetTimer = null; // To control the reset timer
-    
-      // Get all the flow boxes
+      let financeChart = null, hrChart = null, autoResetTimer = null;
+
       const flowBoxes = {
         erp: document.getElementById('flow-erp'),
         hris: document.getElementById('flow-hris'),
         dwh: document.getElementById('flow-dwh'),
         workiva: document.getElementById('flow-workiva')
       };
-    
-      /* --- 2. DEFINE MOCK DATA --- */
-    
-      // --- Step 1-2: Raw Input Data ---
+
+      /* --- MOCKED DATA --- */
       const mockErpData = { "revenue_actual": 120.5, "ebitda": 30.2, "op_ex": 60.1 };
       const mockHrisData = {
         "new_hires": 42, "terminations": 18, "headcount": 5890,
@@ -445,371 +430,149 @@
       const aggregatedJSON = {
         "erp_data": mockErpData, "hris_data": mockHrisData, "dwh_data": mockDwhData
       };
-    
-      // --- Step 4: Curated Insights (EXPANDED) ---
+
       const mockCuratedBoardReportData = {
         key_insights: [
-          { 
-            title: "Revenue Miss Analysis", 
-            text: "Q4 Revenue missed forecast by 10.7% ($14.5M), primarily due to macroeconomic downturn impacting sales in the APAC region.",
-            sentiment: "negative" 
-          },
-          { 
-            title: "Operational Efficiency", 
-            text: "OpEx was successfully controlled, finishing 3.1% below the forecasted $62M due to strong T&E and vendor management. Margins preserved despite revenue miss.",
-            sentiment: "positive"
-          },
-          { 
-            title: "HR Attrition Risk", 
-            text: "Employee terminations (18) were 80% above target. Engineering is a key risk area. Mitigation plans are in place and recruiting has been accelerated.",
-            sentiment: "warning"
-          },
-          {
-            title: "R&D Investment Outlook",
-            text: "R&D spend remains on track with strategic roadmap. New product launch schedule for Q1 remains unaffected by current OpEx tightening.",
-            sentiment: "positive"
-          },
-          {
-            title: "Cash Flow Position",
-            text: "Operating cash flow remains strong at $45M for the quarter, providing sufficient buffer for planned Q1 capital expenditures.",
-            sentiment: "positive"
-          }
+          { title: "Revenue Miss Analysis", text: "Q4 Revenue missed forecast by 10.7% due to APAC macroeconomic downturn.", sentiment: "negative" },
+          { title: "Operational Efficiency", text: "OpEx successfully controlled, finishing 3.1% below forecast. Margins preserved despite revenue miss.", sentiment: "positive" },
+          { title: "HR Attrition Risk", text: "Engineering terminations 80% above target. Mitigation plans active and recruiting accelerated.", sentiment: "warning" },
+          { title: "R&D Investment Outlook", text: "R&D spend on track. New product launch schedule unaffected by OpEx tightening.", sentiment: "positive" },
+          { title: "Cash Flow Position", text: "Operating cash flow remains strong at $45M, buffering Q1 Capex.", sentiment: "positive" }
         ]
       };
-    
-      // --- STEP 5 MOCK AI RESPONSE (POSITIVE) ---
-      const mockAiResponse = {
-        "analysis_id": "SS-45b1",
-        "subject": "Q4 Public Report Analysis: [Company Name]",
-        "sentiment": "Optimistic",
-        "key_findings": [
-          {
-            "area": "Revenue",
-            "finding": "Top-line revenue missed consensus forecast ($120.5M vs $135.0M), attributed to macroeconomic factors.",
-            "impact": "Negative"
-          },
-          {
-            "area": "Profitability",
-            "finding": "Excellent operational control. OpEx beat the forecast ($60.1M vs $62.0M), preserving margins. EBITDA beat its target.",
-            "impact": "Positive"
-          },
-          {
-            "area": "Risk (Human Capital)",
-            "finding": "A spike in terminations (18 vs. 10 target) was noted. The report clearly identifies this as a risk with mitigation plans, demonstrating high management transparency.",
-            "impact": "Warning (Mitigated by Transparency)"
-          }
-        ],
-        "recommendation": "BUY (Upgrade from HOLD). The revenue miss is a known factor. Our confidence comes from the exceptional transparency and quality of the curated data. Management clearly identifies risks (attrition) and strengths (OpEx control) with no blind spots. This level of data integrity signals strong governance and reduces our risk premium. We are initiating a BUY position."
-      };
-      // ---------------------------------
-    
-    
-      /* --- 3. HELPER FUNCTIONS (The "Tools") --- */
-    
-      function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-      }
-    
-      function getTimestamp() {
-        const now = new Date();
-        return now.toISOString().split('T')[0] + ' ' + now.toTimeString().split(' ')[0];
-      }
-    
-      function updateFlowStatus(box, status) {
-        box.classList.remove('running', 'success', 'fail');
-        if (status) {
-          box.classList.add(status);
-        }
-      }
-    
-      function addStatusRow(systemCall, status, time) {
+
+      /* --- AUXILIARY FUNCTIONS --- */
+      function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+      function getTimestamp() { return new Date().toISOString().split('T')[1].split('.')[0]; }
+      function updateFlowStatus(box, status) { box.classList.remove('running', 'success'); if (status) box.classList.add(status); }
+      function addStatusRow(call, status, time) {
         const row = document.createElement('tr');
-        // Use classes to ensure the correct color from the creation stage
-        const statusClass = status === 'Success' ? 'status-success' : (status === 'Running' ? 'status-running' : '');
-        
-        row.innerHTML = `
-          <td>${systemCall}</td>
-          <td class="${statusClass}">${status}</td>
-          <td>${time ? time + ' ms' : '...'}</td>
-          <td>${time ? getTimestamp() : '...'}</td>
-        `;
-        statusTableBody.appendChild(row);
-        return row;
+        const statusClass = status === 'Success' ? 'status-success' : 'status-running';
+        row.innerHTML = `<td>${call}</td><td class="${statusClass}">${status}</td><td>${time||'...'}</td><td>${time?getTimestamp():'...'}</td>`;
+        statusTableBody.appendChild(row); return row;
       }
-    
-      function updateStatusRow(row, status, time) {
-        const cells = row.getElementsByTagName('td');
-        cells[1].innerText = status;
-        cells[1].className = 'status-success'; // It guarantees a successful class
-        cells[2].innerText = time + ' ms';
-        cells[3].innerText = getTimestamp();
+      function updateStatusRow(row, time) { 
+        row.cells[1].innerText='Success'; 
+        row.cells[1].className='status-success'; 
+        row.cells[2].innerText=time+'ms'; 
+        row.cells[3].innerText=getTimestamp(); 
       }
-    
+
       function resetDemo() {
-        // Cancels any pending auto-reset timer
         if (autoResetTimer) clearTimeout(autoResetTimer);
-    
-        // Clean data
-        statusTableBody.innerHTML = '';
-        dataStream.innerText = '';
-        insightsContainer.innerHTML = '';
-        Object.values(flowBoxes).forEach(box => updateFlowStatus(box, null));
-        
-        // Resets visibility to its initial state
+        statusTableBody.innerHTML = ''; dataStream.innerText = ''; insightsContainer.innerHTML = '';
+        Object.values(flowBoxes).forEach(b => updateFlowStatus(b, null));
         step1to2Content.classList.remove('hidden'); 
-        step3MessageContainer.classList.add('hidden');
-        runStep4Button.classList.add('hidden');
-        step4Dashboard.classList.add('hidden');
-        runStep5Button.classList.add('hidden'); 
-        step5AISentinel.classList.add('hidden'); 
-        
-        // Destroy old graphics
-        if (financeChart) {
-          financeChart.destroy();
-          financeChart = null;
-        }
-        if (hrChart) {
-          hrChart.destroy();
-          hrChart = null;
-        }
-        
-        // Reset buttons
-        runButton.disabled = false;
-        runButton.innerText = 'RUN'; 
-        runStep4Button.disabled = false;
-        runStep4Button.innerText = 'FETCH & DISPLAY DASHBOARD';
-        runStep5Button.disabled = false; 
-        runStep5Button.innerText = 'Invoke Strategic Sentinel AI'; 
+        [step3MessageContainer, runStep4Button, step4Dashboard, runStep5Button, step5AISentinel].forEach(el => el.classList.add('hidden'));
+        if (financeChart) { financeChart.destroy(); financeChart = null; }
+        if (hrChart) { hrChart.destroy(); hrChart = null; }
+        runButton.disabled = false; runButton.innerText = 'RUN';
+        runStep4Button.disabled = false; runStep5Button.disabled = false;
       }
-    
-    
-      // --- CHART FUNCTIONS ---
-      function renderFinanceChart() {
-        if (typeof ApexCharts === 'undefined') {
-          console.error('ApexCharts library is not loaded.');
-          return;
+
+      /* --- FLOW 1 --- */
+      async function runDemo() {
+        resetDemo();
+        runButton.disabled = true; runButton.innerText = 'RUNNING...';
+        updateFlowStatus(flowBoxes.erp, 'running'); const r1 = addStatusRow('ERP CALL', 'Running'); await sleep(800); updateFlowStatus(flowBoxes.erp, 'success'); updateStatusRow(r1, 180);
+        updateFlowStatus(flowBoxes.hris, 'running'); const r2 = addStatusRow('HRIS CALL', 'Running'); await sleep(600); updateFlowStatus(flowBoxes.hris, 'success'); updateStatusRow(r2, 95);
+        updateFlowStatus(flowBoxes.dwh, 'running'); const r3 = addStatusRow('DWH QUERY', 'Running'); await sleep(1000); updateFlowStatus(flowBoxes.dwh, 'success'); updateStatusRow(r3, 220);
+        updateFlowStatus(flowBoxes.workiva, 'running'); const r4 = addStatusRow('WORKIVA SUBMIT', 'Running'); await sleep(900); updateFlowStatus(flowBoxes.workiva, 'success'); updateStatusRow(r4, 210);
+        dataStream.innerText = JSON.stringify(aggregatedJSON, null, 2);
+        await sleep(3000);
+        step3MessageContainer.classList.remove('hidden');
+        runStep4Button.classList.remove('hidden');
+        runButton.disabled = false; runButton.innerText = 'RUN';
+      }
+
+      /* --- FLOW 2 --- */
+      async function runStep4() {
+        runStep4Button.disabled = true; runStep4Button.innerText = 'FETCHING...';
+        await sleep(1000);
+        step1to2Content.classList.add('hidden'); step3MessageContainer.classList.add('hidden'); runStep4Button.classList.add('hidden');
+        step4Dashboard.classList.remove('hidden');
+        renderCharts();
+        populateNarrative();
+        runStep5Button.classList.remove('hidden');
+        runStep4Button.disabled = false; runStep4Button.innerText = 'FETCH & DISPLAY DASHBOARD';
+      }
+
+      /* --- FLOW 3 --- */
+      async function runStep5() {
+        runStep5Button.disabled = true; runStep5Button.innerText = 'ANALYZING...';
+        step4Dashboard.classList.add('hidden'); runStep5Button.classList.add('hidden');
+        step5AISentinel.classList.remove('hidden'); aiLoader.classList.remove('hidden'); aiResponseStream.classList.add('hidden');
+
+        // >>>>> PLACE YOUR PIPEDREAM URL BELOW <<<<<
+        const pipedreamUrl = "https://eoln72jzpl1cv2k.m.pipedream.net"; 
+
+        try {
+          const full_report_package = {
+            company: "Global Corp (Demo)", period: "Q4 2024",
+            financials: { actuals: mockErpData, forecast: mockDwhData },
+            hr_data: mockHrisData,
+            board_narratives: mockCuratedBoardReportData.key_insights
+          };
+
+          const response = await fetch(pipedreamUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(full_report_package)
+          });
+
+          if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+          const aiData = await response.json();
+          aiLoader.classList.add('hidden');
+          aiResponseStream.innerText = typeof aiData === 'object' ? JSON.stringify(aiData, null, 2) : aiData;
+          aiResponseStream.classList.remove('hidden');
+          aiResponseStream.style.color = '#e0e0e0';
+
+        } catch (error) {
+          console.error("AI Error:", error);
+          aiLoader.classList.add('hidden');
+          aiResponseStream.innerText = "ERROR CONNECTING TO AI:\n" + error.message;
+          aiResponseStream.classList.remove('hidden');
+          aiResponseStream.style.color = '#ff5555';
         }
         
-        const options = {
-          series: [{
-            name: 'Actual',
-            data: [mockErpData.revenue_actual, mockErpData.ebitda, mockErpData.op_ex]
-          }, {
-            name: 'Target (Forecast)',
-            data: [mockDwhData.q4_revenue_forecast, 30.0, mockDwhData.q4_op_ex_forecast] 
-          }],
-          chart: { 
-            type: 'bar', 
-            height: 250, 
-            toolbar: { show: false }, 
-            foreColor: '#a0a0a0', // Text slightly darker than pure white
-            fontFamily: 'Inter, sans-serif',
-            background: 'transparent'
-          },
-          plotOptions: { bar: { horizontal: false, columnWidth: '50%', endingShape: 'rounded', borderRadius: 2 } },
-          dataLabels: { enabled: false }, // Removed for a cleaner look
-          grid: {
-            borderColor: 'rgba(0,220,220,0.1)',
-            strokeDashArray: 4,
-            xaxis: { lines: { show: false } },   
-            yaxis: { lines: { show: true } }
-          },
-          stroke: { show: true, width: 4, colors: ['transparent'] },
-          xaxis: { 
-            categories: ['Revenue', 'EBITDA', 'OpEx'],
-            axisBorder: { show: true, color: 'rgba(0,220,220,0.2)' },
-            axisTicks: { show: false },
-            labels: {
-                style: { colors: '#00e0e0', fontSize: '12px', fontWeight: 500 }
-            }
-          },
-          yaxis: { 
-            title: { text: '$ Millions', style: { color: '#a0a0a0', fontWeight: 400 } },
-            labels: { style: { colors: '#00e0e0', fontSize: '12px' } }
-          },
-          fill: { opacity: 1 },
-          tooltip: { 
-            theme: 'dark', 
-            y: { formatter: val => `$${val}M` },
-            style: { fontSize: '12px' }
-          },
-          colors: ['#00a0e0', '#005580'], // Light blue vs. Dark blue
-          legend: { 
-            position: 'top',
-            horizontalAlign: 'right',
-            offsetY: -20,
-            labels: { colors: '#c0c0c0' },
-            markers: { width: 10, height: 10, radius: 10 }
-          }
-        };
-        financeChart = new ApexCharts(document.querySelector("#finance-bar-chart"), options);
-        financeChart.render();
+        runStep5Button.disabled = false; runStep5Button.innerText = 'Invoke Strategic Sentinel AI';
+        autoResetTimer = setTimeout(resetDemo, 45000);
       }
-    
-      function renderHRChart() {
-        if (typeof ApexCharts === 'undefined') {
-          console.error('ApexCharts library is not loaded.');
-          return;
-        }
-          
-        const chartData = mockHrisData.department_metrics;
-        const options = {
-          series: chartData.map(d => d.hc),
-          labels: chartData.map(d => d.dept),
-          chart: { 
-            type: 'donut', 
-            height: 250, 
-            foreColor: '#a0a0a0',
-            fontFamily: 'Inter, sans-serif',
-            background: 'transparent'
-          },
-          plotOptions: { 
-            pie: { 
-              donut: { 
-                size: '70%',
-                labels: { 
-                  show: true, 
-                  name: { show: true, fontSize: '14px', color: '#a0a0a0', offsetY: -5 },
-                  value: { show: true, fontSize: '24px', color: '#00e0e0', fontWeight: 700, offsetY: 5, formatter: val => parseInt(val).toLocaleString() },
-                  total: { 
-                    show: true, 
-                    label: 'Total', 
-                    color: '#e0e0e0', 
-                    formatter: () => mockHrisData.headcount.toLocaleString()
-                  }
-                } 
-              } 
-            } 
-          },
-          dataLabels: { enabled: false },
-          stroke: { width: 2, colors: ['#1a1a25'] }, // Dark border to separate slices
-          tooltip: { 
-            theme: 'dark', 
-            y: { formatter: val => val.toLocaleString() },
-            style: { fontSize: '12px' }
-          },
-          legend: { show: false },
-          // Monochromatic palette of blues/cyans/grays
-          colors: ['#00e0e0', '#00b0d0', '#0080c0', '#0050b0', '#506080', '#304050']
-        };
-        hrChart = new ApexCharts(document.querySelector("#hr-donut-chart"), options);
-        hrChart.render();
+
+      function renderCharts() {
+        if (typeof ApexCharts === 'undefined') return;
+        financeChart = new ApexCharts(document.querySelector("#finance-bar-chart"), {
+          series: [{name:'Actual',data:[120.5,30.2,60.1]},{name:'Target',data:[135,30,62]}],
+          chart: {type:'bar',height:250,toolbar:{show:false},foreColor:'#a0a0a0',background:'transparent',fontFamily:'Inter'},
+          plotOptions:{bar:{horizontal:false,columnWidth:'50%',borderRadius:2}},dataLabels:{enabled:false},
+          grid:{borderColor:'rgba(0,220,220,0.1)',xaxis:{lines:{show:false}},yaxis:{lines:{show:true}}},
+          xaxis:{categories:['Revenue','EBITDA','OpEx'],axisBorder:{color:'rgba(0,220,220,0.2)'},labels:{style:{colors:'#00e0e0',fontWeight:600}}},
+          yaxis:{title:{text:'$ M'},labels:{style:{colors:'#00e0e0'}}},
+          tooltip:{theme:'dark',y:{formatter:v=>`$${v}M`}},colors:['#00aaff','#0088cc'],legend:{position:'top',offsetY:-10,labels:{colors:'#c0c0c0'}}
+        }); financeChart.render();
+        hrChart = new ApexCharts(document.querySelector("#hr-donut-chart"), {
+          series: [2100,1500,800,600,400,490], labels: ['Eng','Sales','Mkt','Fin','HR','Oth'],
+          chart: {type:'donut',height:250,foreColor:'#a0a0a0',background:'transparent',fontFamily:'Inter'},
+          plotOptions:{pie:{donut:{size:'75%',labels:{show:true,total:{show:true,label:'Total',color:'#e0e0e0',formatter:()=>'5890'},value:{color:'#00e0e0',fontSize:'22px',fontWeight:700}}}}},
+          dataLabels:{enabled:false},stroke:{width:2,colors:['#151520']},tooltip:{theme:'dark'},legend:{show:false},
+          colors:['#00e0e0','#0099cc','#0066aa','#004488','#555555','#333333']
+        }); hrChart.render();
       }
-    
       function populateNarrative() {
         insightsContainer.innerHTML = ''; 
         mockCuratedBoardReportData.key_insights.forEach(insight => {
-          const insightElement = document.createElement('li');
-          insightElement.className = insight.sentiment; 
-          insightElement.innerHTML = `
-            <div class="insight-title">${insight.title}</div>
-            <div class="insight-text">${insight.text}</div>
-          `;
-          insightsContainer.appendChild(insightElement);
+          const li = document.createElement('li'); li.className = insight.sentiment;
+          li.innerHTML = `<div class="insight-title">${insight.title}</div><div class="insight-text">${insight.text}</div>`;
+          insightsContainer.appendChild(li);
         });
       }
-    
-      /* --- 4. THE MAIN DEMO FUNCTIONS --- */
-    
-      // --- Steps 1, 2, 3 ---
-      async function runDemo() {
-        resetDemo(); // Make sure it starts clean
-        runButton.disabled = true;
-        runButton.innerText = 'RUNNING...';
-        
-        updateFlowStatus(flowBoxes.erp, 'running');
-        const erpRow = addStatusRow('ERP SYSTEM CALL', 'Running');
-        await sleep(800);
-        updateFlowStatus(flowBoxes.erp, 'success');
-        updateStatusRow(erpRow, 'Success', 180);
-        
-        updateFlowStatus(flowBoxes.hris, 'running');
-        const hrisRow = addStatusRow('HRIS SYSTEM CALL', 'Running');
-        await sleep(600);
-        updateFlowStatus(flowBoxes.hris, 'success');
-        updateStatusRow(hrisRow, 'Success', 95);
-        
-        updateFlowStatus(flowBoxes.dwh, 'running');
-        const dwhRow = addStatusRow('DATA WAREHOUSE QUERY', 'Running');
-        await sleep(1000);
-        updateFlowStatus(flowBoxes.dwh, 'success');
-        updateStatusRow(dwhRow, 'Success', 220);
-        
-        updateFlowStatus(flowBoxes.workiva, 'running');
-        const workivaRow = addStatusRow('WORKIVA SUBMIT', 'Running');
-        await sleep(900);
-        updateFlowStatus(flowBoxes.workiva, 'success');
-        updateStatusRow(workivaRow, 'Success', 210);
-        
-        dataStream.innerText = JSON.stringify(aggregatedJSON, null, 2);
-    
-        // STEP 3
-        await sleep(5000); 
-        step3MessageContainer.classList.remove('hidden');
-        runStep4Button.classList.remove('hidden');
-        
-        runButton.disabled = false;
-        runButton.innerText = 'RUN'; 
-      }
-    
-      // --- Step 4: Fetch and Display Dashboard ---
-      async function runStep4() {
-        runStep4Button.disabled = true;
-        runStep4Button.innerText = 'FETCHING...';
-        await sleep(1000); 
-        
-        step1to2Content.classList.add('hidden');
-        step3MessageContainer.classList.add('hidden');
-        runStep4Button.classList.add('hidden'); 
-        
-        step4Dashboard.classList.remove('hidden');
-        
-        // Render all dashboard components
-        renderFinanceChart();
-        renderHRChart();
-        populateNarrative();
-        
-        runStep5Button.classList.remove('hidden');
-        
-        runStep4Button.disabled = false;
-        runStep4Button.innerText = 'FETCH & DISPLAY DASHBOARD';
-      }
-    
-      // --- STEP 5 FUNCTION ---
-      async function runStep5() {
-        runStep5Button.disabled = true;
-        runStep5Button.innerText = 'ANALYZING...';
-        
-        step4Dashboard.classList.add('hidden');
-        runStep5Button.classList.add('hidden');
-        
-        step5AISentinel.classList.remove('hidden');
-        aiLoader.classList.remove('hidden'); 
-        aiResponseStream.classList.add('hidden'); 
-        
-        await sleep(4000); 
-        
-        aiLoader.classList.add('hidden');
-        
-        aiResponseStream.innerText = JSON.stringify(mockAiResponse, null, 2);
-        aiResponseStream.classList.remove('hidden');
-        
-        runStep5Button.disabled = false; 
-        runStep5Button.innerText = 'Invoke Strategic Sentinel AI';
-    
-        // Auto-reset after 20 seconds
-        autoResetTimer = setTimeout(resetDemo, 20000);
-      }
-    
-      /* --- 5. ATTACH THE EVENT LISTENERS --- */
+
       runButton.addEventListener('click', runDemo);
       runStep4Button.addEventListener('click', runStep4);
       runStep5Button.addEventListener('click', runStep5);
-    
-      // Initial call to ensure the correct state when loading the page
-	resetDemo();
-    
-    }); // End of DOMContentLoaded wrapper
-    </script>
+      resetDemo();
+    });
+  </script>
 </body>
 </html>
