@@ -12,12 +12,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* --- CSS COMPLETO E RESPONSIVO --- */
+    /* --- Complete and responsive CSS --- */
     body {
       font-family: 'Inter', sans-serif;
       background-color: #0d0d12;
       color: #e0e0e0;
-      padding: 0; /* Começa sem padding para mobile */
+      padding: 0; /* It starts without padding for mobile */
       display: flex;
       justify-content: center;
       align-items: flex-start;
@@ -36,15 +36,15 @@
     /* --- Main Layout --- */
     .demo-container {
       display: flex;
-      flex-direction: column; /* Padrão é mobile-first (empilhado) */
+      flex-direction: column; /* The standard is mobile-first (stacked) */
       width: 100%;
-      max-width: 1250px; /* Limite máximo para desktop */
+      max-width: 1250px; /* Maximum limit for desktop */
       background-color: rgba(12, 12, 16, 0.98);
       border: 1px solid rgba(0,220,220,0.3);
       border-radius: 0; /* Sem borda no mobile */
       box-shadow: 0 0 30px rgba(0,255,255,0.2), inset 0 0 15px rgba(0,255,255,0.05);
       overflow: hidden;
-      min-height: 100vh; /* Ocupa a tela inteira no mobile */
+      min-height: 100vh; /* It takes up the entire screen on mobile */
       position: relative;
       z-index: 1;
       background-image:
@@ -63,13 +63,13 @@
       border-radius: 10px;
     }
 
-    /* --- Painéis --- */
+    /* --- Panels --- */
     .flow-panel, .status-panel {
       width: 100%;
       padding: 20px;
       overflow-y: visible;
       position: relative;
-      box-sizing: border-box; /* Garante que o padding não quebre o layout */
+      box-sizing: border-box; /* Ensures that the padding does not break the layout */
     }
     
     .flow-panel {
@@ -95,7 +95,7 @@
       font-weight: 700;
       letter-spacing: 1px;
       margin: 0 0 15px 0;
-      font-size: 1.2em; /* Tamanho bom para mobile */
+      font-size: 1.2em; /* Good size for mobile */
     }
     .flow-panel h2 { margin-bottom: 20px; }
     h3 { margin-top: 25px; }
@@ -224,8 +224,8 @@
       animation: rotate-glow 10s linear infinite; pointer-events: none;
     }
     @keyframes rotate-glow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    #step3-message { font-size: 1.6em; font-weight: 700; border-bottom: none; margin: 0; padding: 0; line-height: 1.2; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.4); width: 90%; margin: 0 auto; display: block; }
-    #step3-submessage { font-size: 1.0em; color: #00ffff; opacity: 0.8; margin: 10px auto 0 auto; font-family: 'Inter', sans-serif; font-weight: 500; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 90%; display: block; }
+    #step3-message { font-size: 1.6em; font-weight: 700; border-bottom: none; margin: 0; padding: 0; line-height: 1.2; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.4); width: 90%; margin: 0 auto; display: block; text-align: center; }
+    #step3-submessage { font-size: 1.0em; color: #00ffff; opacity: 0.8; margin: 10px auto 0 auto; font-family: 'Inter', sans-serif; font-weight: 500; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 90%; display: block; text-align: center; }
 
     /* --- Dashboard --- */
     #step4-dashboard {
@@ -267,8 +267,8 @@
     .apexcharts-xaxistooltip { background-color: #1a1a25 !important; border: 1px solid #00e0e0 !important; color: #00e0e0 !important; }
     
     
-    /* --- MEDIA QUERY PARA RESPONSIVIDADE (iPhone) --- */
-    /* Este bloco só é ativado se a tela tiver 800px de largura ou menos */
+    /* --- MEDIA QUERY FOR RESPONSIVENESS (iPhone) --- */
+    /* This block is only activated if the screen is 800px wide or less */
     @media (max-width: 800px) {
       body {
         padding: 0;
@@ -276,9 +276,9 @@
       }
       
       .demo-container {
-        flex-direction: column; /* Empilha os painéis */
+        flex-direction: column; /* Stack the panels */
         width: 100%;
-        height: auto; /* Remove altura fixa */
+        height: auto; /* Remove fixed height */
         min-height: 100vh;
         border-radius: 0;
         box-shadow: none;
@@ -324,7 +324,7 @@
       
       #step3-message-container { padding: 20px 15px; }
       #step3-message { font-size: 1.4em; }
-      #step3-submessage { font-size: 1.0em; white-space: normal; } /* Permite quebra de linha */
+      #step3-submessage { font-size: 1.0em; white-space: normal; } /* Allows line wrapping */
       
       .dashboard-header { flex-direction: column; align-items: flex-start; }
       .dashboard-grid { grid-template-columns: 1fr; }
@@ -456,7 +456,7 @@
     </div>
 
   <script>
-    // --- JAVASCRIPT COMPLETO (MOCKADO E FUNCIONAL) ---
+    // --- Complete Javascript (Mocked and Functional) ---
     document.addEventListener('DOMContentLoaded', () => {
       
       /* --- 1. GET ALL THE HTML ELEMENTS --- */
